@@ -19,7 +19,6 @@ pred_surface <- function(fit,
   ##
   n <- fit$n
   p <- fit$p
-  # Lm <- fit$Lm ## need original Lms (for X), not Lms for transformed matrices XPsi
   y <- fit$y
   x <- fit$x ## original x (not transformed)
   z <- fit$z
@@ -62,13 +61,13 @@ pred_surface <- function(fit,
 
   # initialize xtheta
   nnew <- nrow(as.matrix(Xnew[[1]]))
-  nfull <- n+nnew#sum(Lm)*gridlen
+  nfull <- n+nnew
   Xthetafull <- matrix(NA,nrow=nfull,ncol=p)
   Xthetafull <- data.frame(Xthetafull)
   colnames(Xthetafull) <- paste0("X",1:p)
 
 
-  pred_mat <- matrix(NA,nrow=S,ncol=nnew)#sum(Lm)*gridlen)
+  pred_mat <- matrix(NA,nrow=S,ncol=nnew)
   for(ss in 1:S){ ## loop over draws
 
     for(jj in (1:p)){
@@ -76,8 +75,6 @@ pred_surface <- function(fit,
       Xthetafull[,jj] <- rbind(as.matrix(x[[jj]]),
                           as.matrix(Xnew[[jj]]))%*%theta[ss,theta_id]
     }
-    # colnames(Xthetafull) <- unlist(lapply(SS,"[[","term"))
-    # nfull <- nrow(Xthetafull)
 
     Kfull <- get_K(Xthetafull,rho_nonadditive[ss,],kernelfun,invmethod,knots)
     if(is.null(Kfull$K)){
@@ -86,9 +83,7 @@ pred_surface <- function(fit,
         Kfull <- get_K(Xthetafull,rho_nonadditive[ss,],kernelfun,invmethod="exact",knots)
       }
     }
-    # K <- Kfull[1:n,1:n]
-    # Knn <- Kfull[(n+1):nfull,(n+1):nfull]
-    # Kno <- Kfull[(n+1):nfull,1:n]
+
 
     Bfull <- Reduce(cbind,lapply(SS,mgcv::PredictMat,data=data.frame(Xthetafull)))
     Bfullproj <- cbind(1,Bfull[,apply(Bfull,2, function(x) stats::var(x)!=0)]) ## remove columns that are constant due to gamma_additive=0 (hence non invertible)
@@ -96,24 +91,18 @@ pred_surface <- function(fit,
     B <- Bfull[1:n,-1]
     Bnew <- Bfull[(n+1):nfull,-1]
 
-    # Pfull <- diag(1,nfull)-eigenMapMatMult(Bfullproj,solve(eigenMapMatMult(t(Bfullproj),Bfullproj),t(Bfullproj)))
     try(invBB <- solve(eigenMapMatMult(t(Bfullproj),Bfullproj)), ## catching linear dependence errors
         invBB <- MASS::ginv(eigenMapMatMult(t(Bfullproj),Bfullproj)))
     Pfull <- diag(1,nfull)-eigenMapMatMult(Bfullproj,invBB%*%t(Bfullproj))
 
-    # Pfull <- diag(1,nfull)-Bfullproj%*%solve(t(Bfullproj)%*%Bfullproj,t(Bfullproj))
     PKPtfull <- eigenQuadProd(Kfull$K,t(Pfull))#Pfull%*%Kfull%*%t(Pfull)
     PKPt <- PKPtfull[1:n,1:n]
     PKnnPt <- PKPtfull[(n+1):nfull,(n+1):nfull]
     PKnoPt <- PKPtfull[(n+1):nfull,1:n]
 
-    # # not using the approximation because
+    #
     W <- FastGP::rcppeigen_invert_matrix(diag(1,n)+tau2_nonadditive[ss]*PKPt)#solve(diag(1,n)+tau2_nonadditive[ss]*PKPt)
-    # SIGres <- get_invSIG(P=Pfull,K=Kfull,n=nfull,tau2_nonadditive=tau2_nonadditive[ss],sigma2=sigma2[ss],invmethod=invmethod,rank=rank)
-    # invSIG <- SIGres$invSIG
 
-    # hmean <- tau2_nonadditive[ss]*PKnoPt*(sigma2[ss]*invSIG)*(y-B%*%c(beta_additive[ss,])-z%*%c(alpha[ss,])) ## multiplying by sigma2 since sigma2 gets included in invSIG
-    # hcov <- sigma2[ss]*tau2_nonadditive[ss]*(PKnnPt-tau2_nonadditive[ss]*PKnoPt%*%(sigma2[ss]*invSIG)%*%t(PKnoPt))
     hmean <- tau2_nonadditive[ss]*eigenMapMatMult(eigenMapMatMult(PKnoPt,(W)),(y-B%*%beta_additive[ss,]-z%*%alpha[ss,])) ## multiplying by sigma2 since sigma2 gets included in invSIG
     hcov <- sigma2[ss]*tau2_nonadditive[ss]*(PKnnPt-tau2_nonadditive[ss]*eigenQuadProd((W),t(PKnoPt)))#    hcov <- sigma2[ss]*tau2_nonadditive[ss]*(PKnnPt-tau2_nonadditive[ss]*PKnoPt%*%(W)%*%t(PKnoPt))
     try(
@@ -197,7 +186,6 @@ pred_surface_indexwise <- function(fit,
   Xthetanew <- data.frame(Xthetanew)
   colnames(Xthetanew) <- paste0("X",1:p)
   nfull <- n+nrow(Xthetanew)
-  ### NOT WITHIN LOOP BECAUSE WE FIX THETA AT POSTERIOR MEAN
   for(jj in (1:p)){
     theta_id <- sum(Lm[0:(jj-1)])+(1:Lm[jj])
     thetabar <- meantheta[theta_id]/sqrt(sum(meantheta[theta_id]^2))
@@ -221,7 +209,6 @@ pred_surface_indexwise <- function(fit,
       Xthetafull[,jj] <- c(as.matrix(x[[jj]])%*%theta[ss,theta_id], ## observed xtheta, using theta
                           Xthetanew[,jj]) ## add the new grid, which only uses meantheta
     }
-    # colnames(Xthetafull) <- unlist(lapply(SS,"[[","term"))
 
 
     Kfull <- get_K(Xthetafull,rho_nonadditive[ss,],kernelfun,invmethod,knots)
@@ -231,39 +218,31 @@ pred_surface_indexwise <- function(fit,
         Kfull <- get_K(Xthetafull,rho_nonadditive[ss,],kernelfun,invmethod="exact",knots)
       }
     }
-    # K <- Kfull[1:n,1:n]
-    # Knn <- Kfull[(n+1):nfull,(n+1):nfull]
-    # Kno <- Kfull[(n+1):nfull,1:n]
 
-    #### POSSIBLY INCORRECT: SHOULD WE BE INCLUDING NEW GRID OF EXPOSURES IN THE PROJECTION MATRIX? DERIVE THIS AGAIN
     Bfull <- Reduce(cbind,lapply(SS,mgcv::PredictMat,data=data.frame(Xthetafull)))
     Bfull <- cbind(1,Bfull) ## add intercept for projection only
     B <- Bfull[1:n,-1]
     Bnew <- Bfull[(n+1):nfull,-1]
-    Bfullproj <- cbind(1, ## add intercept for projection onl
+    Bfullproj <- cbind(1, ## add intercept for projection only
                        Bfull[,apply(Bfull,2, function(x) stats::var(x)!=0)]) ## remove columns that are constant due to gamma_additive=0 (hence non invertible)
 
     try(invBB <- solve(eigenMapMatMult(t(Bfullproj),Bfullproj)), ## catching linear dependence errors
         invBB <- MASS::ginv(eigenMapMatMult(t(Bfullproj),Bfullproj)))
-    Pfull <- diag(1,nfull)-eigenMapMatMult(Bfullproj,invBB%*%t(Bfullproj))#    Pfull <- diag(1,nfull)-Bfullproj%*%solve(t(Bfullproj)%*%Bfullproj,t(Bfullproj))
-    PKPtfull <- eigenQuadProd(Kfull$K,t(Pfull))# PKPtfull <- Pfull%*%Kfull%*%t(Pfull)
+    Pfull <- diag(1,nfull)-eigenMapMatMult(Bfullproj,invBB%*%t(Bfullproj))
+    PKPtfull <- eigenQuadProd(Kfull$K,t(Pfull))
     PKPt <- PKPtfull[1:n,1:n]
     PKnnPt <- PKPtfull[(n+1):nfull,(n+1):nfull]
     PKnoPt <- PKPtfull[(n+1):nfull,1:n]
 
-    # # not using the approximation because
+    #
     W <- FastGP::rcppeigen_invert_matrix(diag(1,n)+tau2_nonadditive[ss]*PKPt)#solve(diag(1,n)+tau2_nonadditive[ss]*PKPt)
-    # SIGres <- get_invSIG(P=Pfull,K=Kfull,n=nfull,tau2_nonadditive=tau2_nonadditive[ss],sigma2=sigma2[ss],invmethod=invmethod,rank=rank)
-    # invSIG <- SIGres$invSIG
 
-    # hmean <- tau2_nonadditive[ss]*PKnoPt*(sigma2[ss]*invSIG)*(y-B%*%c(beta_additive[ss,])-z%*%c(alpha[ss,])) ## multiplying by sigma2 since sigma2 gets included in invSIG
-    # hcov <- sigma2[ss]*tau2_nonadditive[ss]*(PKnnPt-tau2_nonadditive[ss]*PKnoPt%*%(sigma2[ss]*invSIG)%*%t(PKnoPt))
     hmean <- tau2_nonadditive[ss]*eigenMapMatMult(eigenMapMatMult(PKnoPt,(W)),(y-B%*%beta_additive[ss,]-z%*%alpha[ss,]))#hmean <- tau2_nonadditive[ss]*PKnoPt%*%(W)%*%(y-B%*%beta_additive[ss,]-z%*%alpha[ss,]) ## multiplying by sigma2 since sigma2 gets included in invSIG
     hcov <- sigma2[ss]*tau2_nonadditive[ss]*(PKnnPt-tau2_nonadditive[ss]*eigenQuadProd((W),t(PKnoPt)))#    hcov <- sigma2[ss]*tau2_nonadditive[ss]*(PKnnPt-tau2_nonadditive[ss]*PKnoPt%*%(W)%*%t(PKnoPt))
     try(
       draw_nonadditive <- mgcv::rmvn(1,c(hmean),hcov)
     )
-    if(!exists("draw_nonadditive")){ ## trying some error handling?
+    if(!exists("draw_nonadditive")){
       draw_nonadditive <- mgcv::rmvn(1,c(hmean),
                                (hcov+t(hcov))/2) ## if it is non-symmetric
     }
@@ -468,7 +447,6 @@ pred_surface_indexwise_interac <- function(fit,
   Xthetanew <- data.frame(Xthetanew)
   colnames(Xthetanew) <- paste0("X",1:p)
   nfull <- n+nrow(Xthetanew)
-  ### NOT WITHIN LOOP BECAUSE WE FIX THETA AT POSTERIOR MEAN
   for(jj_iter in (1:length(whichindex))){
       jj <- whichindex[jj_iter]
       theta_id <- sum(Lm[0:(jj-1)])+(1:Lm[jj])
@@ -509,8 +487,6 @@ pred_surface_indexwise_interac <- function(fit,
       Xthetafull[,jj] <- c(as.matrix(x[[jj]])%*%theta[ss,theta_id], ## observed xtheta, using theta
                            Xthetanew[,jj]) ## add the new grid, which only uses meantheta
     }
-    # colnames(Xthetafull) <- unlist(lapply(SS,"[[","term"))
-
 
     Kfull <- get_K(Xthetafull,rho_nonadditive[ss,],kernelfun,invmethod,knots)
     if(is.null(Kfull$K)){
@@ -519,11 +495,7 @@ pred_surface_indexwise_interac <- function(fit,
         Kfull <- get_K(Xthetafull,rho_nonadditive[ss,],kernelfun,invmethod="exact",knots)
       }
     }
-    # K <- Kfull[1:n,1:n]
-    # Knn <- Kfull[(n+1):nfull,(n+1):nfull]
-    # Kno <- Kfull[(n+1):nfull,1:n]
 
-    #### POSSIBLY INCORRECT: SHOULD WE BE INCLUDING NEW GRID OF EXPOSURES IN THE PROJECTION MATRIX? DERIVE THIS AGAIN
     Bfull <- Reduce(cbind,lapply(SS,mgcv::PredictMat,data=data.frame(Xthetafull)))
     Bfull <- cbind(1,Bfull) ## add intercept for projection only
     B <- Bfull[1:n,-1]
@@ -533,27 +505,22 @@ pred_surface_indexwise_interac <- function(fit,
 
     try(invBB <- solve(eigenMapMatMult(t(Bfullproj),Bfullproj)), ## catching linear dependence errors
         invBB <- MASS::ginv(eigenMapMatMult(t(Bfullproj),Bfullproj)))
-    Pfull <- diag(1,nfull)-eigenMapMatMult(Bfullproj,invBB%*%t(Bfullproj))#    Pfull <- diag(1,nfull)-Bfullproj%*%solve(t(Bfullproj)%*%Bfullproj,t(Bfullproj))
-    PKPtfull <- eigenQuadProd(Kfull$K,t(Pfull))# PKPtfull <- Pfull%*%Kfull%*%t(Pfull)
+    Pfull <- diag(1,nfull)-eigenMapMatMult(Bfullproj,invBB%*%t(Bfullproj))
+    PKPtfull <- eigenQuadProd(Kfull$K,t(Pfull))
     PKPt <- PKPtfull[1:n,1:n]
     PKnnPt <- PKPtfull[(n+1):nfull,(n+1):nfull]
     PKnoPt <- PKPtfull[(n+1):nfull,1:n]
 
     # # not using the approximation because
     W <- FastGP::rcppeigen_invert_matrix(diag(1,n)+tau2_nonadditive[ss]*PKPt)#solve(diag(1,n)+tau2_nonadditive[ss]*PKPt)
-    # SIGres <- get_invSIG(P=Pfull,K=Kfull,n=nfull,tau2_nonadditive=tau2_nonadditive[ss],sigma2=sigma2[ss],invmethod=invmethod,rank=rank)
-    # invSIG <- SIGres$invSIG
 
 
-
-    # hmean <- tau2_nonadditive[ss]*PKnoPt*(sigma2[ss]*invSIG)*(y-B%*%c(beta_additive[ss,])-z%*%c(alpha[ss,])) ## multiplying by sigma2 since sigma2 gets included in invSIG
-    # hcov <- sigma2[ss]*tau2_nonadditive[ss]*(PKnnPt-tau2_nonadditive[ss]*PKnoPt%*%(sigma2[ss]*invSIG)%*%t(PKnoPt))
     hmean <- tau2_nonadditive[ss]*eigenMapMatMult(eigenMapMatMult(PKnoPt,(W)),(y-B%*%beta_additive[ss,]-z%*%alpha[ss,]))#hmean <- tau2_nonadditive[ss]*PKnoPt%*%(W)%*%(y-B%*%beta_additive[ss,]-z%*%alpha[ss,]) ## multiplying by sigma2 since sigma2 gets included in invSIG
     hcov <- sigma2[ss]*tau2_nonadditive[ss]*(PKnnPt-tau2_nonadditive[ss]*eigenQuadProd((W),t(PKnoPt)))#    hcov <- sigma2[ss]*tau2_nonadditive[ss]*(PKnnPt-tau2_nonadditive[ss]*PKnoPt%*%(W)%*%t(PKnoPt))
     try(
       draw_nonadditive <- mgcv::rmvn(1,c(hmean),hcov)
     )
-    if(!exists("draw_nonadditive")){ ## trying some error handling?
+    if(!exists("draw_nonadditive")){
       draw_nonadditive <- mgcv::rmvn(1,c(hmean),
                                (hcov+t(hcov))/2) ## if it is non-symmetric
     }

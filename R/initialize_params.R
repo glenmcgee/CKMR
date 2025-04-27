@@ -93,9 +93,7 @@ initialize_params <- function(y, ## response
     Blist <- lapply(SS,'[[','X')
     d <- sapply(Blist,ncol)
     B <- Reduce(cbind,Blist)
-    # Bproj <- cbind(1,B) ## or just use get_BP to simplify this
     Bproj <- cbind(1,B[,apply(B,2, function(x) stats::var(x)!=0)]) #
-    # P <- diag(1,n)-Bproj%*%solve(t(Bproj)%*%Bproj,t(Bproj))
     P <- diag(1,n)-Bproj%*%MASS::ginv(t(Bproj)%*%Bproj)%*%t(Bproj) ## avoiding linear dependence issues
   }
   Sstar <- Matrix::bdiag(lapply(lapply(SS,'[[','S'),'[[',1))
@@ -109,14 +107,12 @@ initialize_params <- function(y, ## response
   if(utils::hasName(startvals,"gamma_additive")){
     gamma_additive <- startvals$gamma_additive
   }else{
-    gamma_additive <- stats::rbinom(p,1,pi_additive) # only one per x #stats::rbinom(sum(d),1,pi_additive)
+    gamma_additive <- stats::rbinom(p,1,pi_additive) # only one per x
   }
   if(utils::hasName(startvals,"theta")){
     theta <- startvals$theta
-    # phi <- c(sapply(1:p,function(j) get_phi(theta[sum(Lm[0:(j-1)])+(1:Lm[j])])))
   }else{
     theta <- rep(gamma_additive/sqrt(Lm),times=Lm)  ## redoing theta with requisite zeros
-    # phi <- c(sapply(1:p,function(j) get_phi(theta[sum(Lm[0:(j-1)])+(1:Lm[j])])))
   }
   ## updating xtheta etc. with proper gammas/thetas
   for(j in (1:p)){

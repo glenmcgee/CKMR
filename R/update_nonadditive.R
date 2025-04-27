@@ -57,7 +57,6 @@ update_gamma_nonadditive <- function(params){ ## draw both gamma and rho
     ## log of MH acceptance ratio
     logLik <- -0.5*((logdetSIG_prop-logdetSIG)+
                       as.numeric(eigenQuadProd(invSIG_prop-invSIG,y_Bbeta_Zalpha)) )
-    #                    as.numeric(t(y_Bbeta_Zalpha)%*%(invSIG_prop-invSIG)%*%y_Bbeta_Zalpha) )
     ## combining prior and proposal components because of the cancellations (from drawing gamma from the prior)
     logPriorProp <- (gamma_nonadditive_prop[j])*log(pi_nonadditive/(1-pi_nonadditive)) +
                     (1-gamma_nonadditive_prop[j])*log((1-pi_nonadditive)/pi_nonadditive)
@@ -146,7 +145,6 @@ update_rho_nonadditive <- function(params){ ## refinement step only
       ## log of MH acceptance ratio
       logLik <- -0.5*((logdetSIG_prop-logdetSIG)+
                         as.numeric(eigenQuadProd(invSIG_prop-invSIG,y_Bbeta_Zalpha)) )      ## proposed - current
-                        #as.numeric(t(y_Bbeta_Zalpha)%*%(invSIG_prop-invSIG)%*%y_Bbeta_Zalpha) )
       # prior should just be the Gamma prior component, since this conditions on gamma_nonadditive[j]=1
       logPrior <- stats::dgamma(rho_nonadditive_prop[j],shape=prior_rho_nonadditive[1],rate=prior_rho_nonadditive[2],log=TRUE)-
         stats::dgamma(rho_nonadditive[j]     ,shape=prior_rho_nonadditive[1],rate=prior_rho_nonadditive[2],log=TRUE)                                                ## proposed - current

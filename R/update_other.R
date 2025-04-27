@@ -44,7 +44,6 @@ update_sigma2 <- function(params){
 
   newsigma2 <- 1/stats::rgamma(1,
                         shape=a_sig+0.5*n,
-                        # rate=b_sig+0.5*t(y-Bbeta-Zalpha)%*%solve(sigma2*invSIG,(y-Bbeta-Zalpha))) ## note multiplying by sigma2 because invSIG is divided by sigma2
                         rate=b_sig+0.5*t(y-Bbeta-Zalpha)%*%(sigma2*invSIG)%*%(y-Bbeta-Zalpha)) ## note multiplying by sigma2 because invSIG is divided by sigma2
 
   newparams$params$sigma2 <- newsigma2

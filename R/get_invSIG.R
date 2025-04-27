@@ -10,9 +10,7 @@ get_invSIG <- function(P,K,n=nrow(P),tau2_nonadditive,sigma2,invmethod="exact",r
 
   if(invmethod=="exact"){
 
-    SIG <- sigma2*(diag(1,n)+tau2_nonadditive*eigenQuadProd(K$K,P))#sigma2*(diag(1,n)+tau2_nonadditive*t(P)%*%K$K%*%P)
-    # cholSIG <- chol(SIG)
-    # invSIG <- chol2inv(cholSIG)
+    SIG <- sigma2*(diag(1,n)+tau2_nonadditive*eigenQuadProd(K$K,P))#
     invSIG <- FastGP::rcppeigen_invert_matrix(SIG)
     cholSIG <- FastGP::rcppeigen_get_chol(SIG)
     logdetSIG <- 2*as.numeric(sum(log((diag(cholSIG)))))
@@ -39,7 +37,7 @@ get_invSIG <- function(P,K,n=nrow(P),tau2_nonadditive,sigma2,invmethod="exact",r
     }else{
       rpm <- rp(n,rank*2,1,eigenQuadProd(K$K,P),rank)#rp(n,rank*2,1,t(P)%*%K$K%*%P,rank)
       Dm <- (c(rpm$d)[1:rank])^2 ## need to take square to get eigenvalues
-      Um <- rpm$u[,1:rank] ## columns may have
+      Um <- rpm$u[,1:rank]
       ## correct the sign (such that the eigenvectors are orthonormal)
       signflip = which(diag(t(Um)%*%Um)<0)
       Um[,signflip] = -Um[,signflip]

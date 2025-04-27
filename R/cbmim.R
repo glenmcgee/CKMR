@@ -1,35 +1,3 @@
-##
-
-## Edited to use Rcppeigen inversion via FastGP
-## Projection matrix: only use ginv (moore-penrose) if solve fails (cant use Rcppeigen here since it wont give error)
-
-
-# library(Rcpp)
-# library(RcppArmadillo)
-# library(RcppEigen)
-# library(FastGP)
-# library(parallel)
-#
-# source("rp.R")
-# source("get_K.R")
-# source("get_BP.R")
-# source("get_invSIG.R")
-# source("initialize_params.R")
-# source("update_additive.R")
-# source("update_nonadditive.R")
-# source("update_index.R")
-# source("update_hierarchical.R")
-# source("update_other.R")
-# source("pred_surface.R")
-# source("get_lastvals.R")
-# source("get_PIPs.R")
-# source("getbasis.R")
-# source("get_phi.R")
-# source("check_conv.R")
-#
-# require(mgcv)
-# require(Rfast) # for rvmf
-# require(MASS)
 
 
 #' Fit CKMR/CMIM
@@ -192,18 +160,16 @@ cbmim <- function(y, ## response
       }else{
         gibbs_update <- function(params){
           newparams <- params
-          # newparams <- update_gamma_additive(newparams) ## error due to penalization
-          # newparams <- update_gamma_nonadditive(newparams) ## joint step for gamma AND rho
           newparams <- update_gamma_index(newparams) ## between model step
           newparams <- update_theta(newparams) ## refinement step for index weights|gamma=1 to improve mixing
           newparams <- update_beta_additive(newparams) ## refinement step for beta|gamma=1 to improve mixing
           newparams <- update_pi_additive(newparams)
-          newparams <- update_tau2_additive(newparams) ## sensitive to priors?
+          newparams <- update_tau2_additive(newparams) ##
           newparams <- update_rho_nonadditive(newparams)   ## refinement step for rho|gamma=1 to improve mixing
           newparams <- update_pi_nonadditive(newparams)
-          newparams <- update_tau2_nonadditive(newparams) ## not moving at all
+          newparams <- update_tau2_nonadditive(newparams) ##
           newparams <- update_alpha(newparams)
-          newparams <- update_sigma2(newparams) ## sensitive to priors
+          newparams <- update_sigma2(newparams) ##
           return(newparams)
         }
       }
@@ -286,7 +252,7 @@ cbmim <- function(y, ## response
       for(cc in 1:nchains){
         chains[[cc]] <- run_mcmc()
       }
-    }else{ ## run in parallerl with nchains>1 and ncores>1
+    }else{ ## run in parallel with nchains>1 and ncores>1
       chains <- parallel::mclapply(1:nchains,run_mcmc,mc.cores=ncores)
       # chains <- lapply(1:nchains,run_mcmc)
     }

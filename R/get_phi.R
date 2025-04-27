@@ -14,7 +14,6 @@ get_phi <- function(theta){
   phi <- c(asin(theta[1]))
   if(length(theta)>2){
     for(jj in 2:(length(theta)-1)){
-      # phi <- c(phi,asin(theta[jj]/(prod(cos(phi)))))
       phi <- c(phi,
                 min(max(asin(theta[jj]/(prod(cos(phi)))),-1),1) ## in case of rounding error
                )

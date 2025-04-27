@@ -83,48 +83,24 @@ update_gamma_index <- function(params){ ##
       beta_additive_prop[beta_id[length(beta_id)]] <- stats::rnorm(1,0,1) ## draw the final term from N(0,1) separately
       logPrior <- logPrior+  ## proposed - current
         log(pi_additive)-log(1-pi_additive) ## for gamma_additive
-      ## Note: Proposal and prior cancel for beta, since we draw from the prior slab
-      # logPrior <- logPrior+  ## proposed - current
-      #   log(pi_additive)-log(1-pi_additive)+ ## for gamma_additive
-      #   (-0.5*(d[j]-1)*log(2*pi)-0.5*(d[j]-1)*log(tau2_additive[j])+0.5*log(abs(det(as.matrix((Sstar[beta_id,beta_id])[-d[j],-d[j]]))))-0.5*as.numeric(t(beta_additive_prop[beta_id])%*%Sstar[beta_id,beta_id]%*%beta_additive_prop[beta_id]) )-0 ## for beta_additive   ## *****ADDED d[j]-1 and -length(which1) to remove unpenalized terms
       logProp <- logProp+ ## current - proposed
         0-stats::dnorm(beta_additive_prop[beta_id[length(beta_id)]],0,1,log=TRUE) ## due to final term drawn from N(0,1)
-      #   0-(-0.5*(d[j]-1)*log(2*pi)-0.5*(d[j]-1)*log(tau2_additive[j])+0.5*log(abs(det(as.matrix((Sstar[beta_id,beta_id])[-d[j],-d[j]]))))-0.5*as.numeric(t(beta_additive_prop[beta_id])%*%Sstar[beta_id,beta_id]%*%beta_additive_prop[beta_id]) ) ## for beta_additive    ## *****ADDED d[j]-1 and -length(which1) to remove unpenalized terms
     }else if(gamma_additive_prop[j]<gamma_additive[j]){
       beta_additive_prop[beta_id] <- 0*beta_additive[beta_id]
       logPrior <- logPrior+  ## proposed - current
         log(1-pi_additive)-log(pi_additive) ## for gamma_additive
-      ## Note: Proposal and prior cancel for beta, since we draw from the prior slab
-      # logPrior <- logPrior+  ## proposed - current
-      #   log(1-pi_additive)-log(pi_additive)+ ## for gamma_additive
-      #   0-(-0.5*(d[j]-1)*log(2*pi)-0.5*(d[j]-1)*log(tau2_additive[j])+0.5*log(abs(det(as.matrix((Sstar[beta_id,beta_id])[-d[j],-d[j]]))))-0.5*as.numeric(t(beta_additive[beta_id])%*%Sstar[beta_id,beta_id]%*%beta_additive[beta_id]) ) ## for beta_additive    ## *****ADDED d[j]-1 and -length(which1) to remove unpenalized terms
-      ## TESTING: adding in this term since acceptance ratio needs to be symmetric
       logProp <- logProp+ ## current - proposed
         stats::dnorm(beta_additive[beta_id[length(beta_id)]],0,1,log=TRUE)-0 ## due to final term drawn from N(0,1) in increasing model step above
-
-      #   (-0.5*(d[j]-1)*log(2*pi)-0.5*(d[j]-1)*log(tau2_additive[j])+0.5*log(abs(det(as.matrix((Sstar[beta_id,beta_id])[-d[j],-d[j]]))))-0.5*as.numeric(t(beta_additive[beta_id])%*%Sstar[beta_id,beta_id]%*%beta_additive[beta_id]) )-0 ## for beta_additive     ## *****ADDED d[j]-1 and -length(which1) to remove unpenalized terms
     }
     # proposed rho
     if(gamma_nonadditive_prop[j]>gamma_nonadditive[j]){
       rho_nonadditive_prop[j] <- stats::rgamma(1,shape=prior_rho_nonadditive[1],rate=prior_rho_nonadditive[2]) # drawing from prior
       logPrior <- logPrior+   ## proposed - current
         log(pi_nonadditive)-log(1-pi_nonadditive) ## for gamma_nonadditive
-      ## Note: Proposal and prior cancel for rho, since we draw from the prior slab
-      # logPrior <- logPrior+   ## proposed - current
-      #   log(pi_nonadditive)-log(1-pi_nonadditive)+ ## for gamma_nonadditive
-      #   dgamma(rho_nonadditive_prop[j],shape=prior_rho_nonadditive[1],rate=prior_rho_nonadditive[2],log=TRUE)-0 ## for rho_nonadditive
-      # logProp <- logProp+ ## current - proposed
-      #   0-dgamma(rho_nonadditive_prop[j],shape=prior_rho_nonadditive[1],rate=prior_rho_nonadditive[2],log=TRUE) ## for rho_nonadditive
     }else if(gamma_nonadditive_prop[j]<gamma_nonadditive[j]){
       rho_nonadditive_prop[j] <- 0
       logPrior <- logPrior+   ## proposed - current
         log(1-pi_nonadditive)-log(pi_nonadditive) ## for gamma_nonadditive
-      ## Note: Proposal and prior cancel for rho, since we draw from the prior slab
-      # logPrior <- logPrior+   ## proposed - current
-      #   log(1-pi_nonadditive)-log(pi_nonadditive)+ ## for gamma_nonadditive
-      #   0-dgamma(rho_nonadditive[j],shape=prior_rho_nonadditive[1],rate=prior_rho_nonadditive[2],log=TRUE) ## for rho_nonadditive
-      # logProp <- logProp+ ## current - proposed
-      #   dgamma(rho_nonadditive[j],shape=prior_rho_nonadditive[1],rate=prior_rho_nonadditive[2],log=TRUE)-0 ## for rho_nonadditive
     }
     # proposed theta
     if(gamma_additive[j]==0 & gamma_nonadditive[j]==0){ ## if moving from (0,0) to another state
@@ -136,30 +112,15 @@ update_gamma_index <- function(params){ ##
         B_prop <- newBP$B
         P_prop <- newBP$P
       }
-      ## Note: Proposal and prior cancel for theta, since we draw from the prior slab
-      # logPrior <- logPrior+ ## proposed - current
-      #   prior_theta_kappa*sum(theta_prop[theta_id]*rep(1/sqrt(Lm[j]),Lm[j]))-0  ## for theta
-      # logProp <- logProp+ ## current - proposed
-      #   0-prior_theta_kappa*sum(theta_prop[theta_id]*rep(1/sqrt(Lm[j]),Lm[j]))  ## for theta
     }else if(gamma_additive_prop[j]==0 & gamma_nonadditive_prop[j]==0){ ## if moving to (0,0)
       if(Lm[j]>1){ ## otherwise it's just 1 (same as theta)
         theta_prop[theta_id] <- 0*theta[theta_id]
         ## update xtheta, B, and P
-        xtheta_prop[,j] <- 0#x[[j]]%*%theta_prop[theta_id]
+        xtheta_prop[,j] <- 0
         newBP <- get_BP(xtheta_prop,B,SS,j,d,n,approxProj,P)
         B_prop <- newBP$B
         P_prop <- newBP$P
       }
-      # ## update xtheta, B, and P
-      # xtheta_prop[,j] <- 0#x[[j]]%*%theta_prop[theta_id]
-      # newBP <- get_BP(xtheta_prop,B,SS,j,d,n,approxProj,P)
-      # B_prop <- newBP$B
-      # P_prop <- newBP$P
-      ## Note: Proposal and prior cancel for theta, since we draw from the prior slab
-      # logPrior <- logPrior+ ## proposed - current
-      #   0-prior_theta_kappa*sum(theta[theta_id]*rep(1/sqrt(Lm[j]),Lm[j])) ## for theta
-      # logProp <- logProp+ ## current - proposed
-      #   prior_theta_kappa*sum(theta[theta_id]*rep(1/sqrt(Lm[j]),Lm[j]))-0 ## for theta
     }
 
     y_Bbeta_Zalpha_prop <- y_Zalpha-B_prop%*%beta_additive_prop
@@ -175,8 +136,6 @@ update_gamma_index <- function(params){ ##
     ## log of MH acceptance ratio
     logLik <- -0.5*((logdetSIG_prop-logdetSIG)+
                       as.numeric(t(y_Bbeta_Zalpha_prop)%*%(invSIG_prop)%*%y_Bbeta_Zalpha_prop-t(y_Bbeta_Zalpha)%*%(invSIG)%*%y_Bbeta_Zalpha)  )      ## proposed - current
-    # logPrior <- ## proposed - current ## computed above
-    # logProp <- ## current - proposed ## computed above
     logDiff <- logLik+logPrior+logProp
     logU <- log(stats::runif(1,0,1))
 
@@ -293,7 +252,6 @@ update_theta <- function(params){ ## draw theta (index weights)
     ## log of Metropolis acceptance ratio
     logLik <- -0.5*((logdetSIG_prop-logdetSIG)+
                       as.numeric(eigenQuadProd(invSIG_prop,y_Bbeta_Zalpha_prop)-eigenQuadProd(invSIG,y_Bbeta_Zalpha))  )      ## proposed - current
-                      #as.numeric(t(y_Bbeta_Zalpha_prop)%*%(invSIG_prop)%*%y_Bbeta_Zalpha_prop-t(y_Bbeta_Zalpha)%*%(invSIG)%*%y_Bbeta_Zalpha)  )      ## proposed - current
     logPrior <- prior_theta_kappa*sum(theta_prop[theta_id]*rep(1/sqrt(Lm[j]),Lm[j]))-
       prior_theta_kappa*sum(theta[theta_id]*rep(1/sqrt(Lm[j]),Lm[j]))  ## proposed - current
     logDiff <- logLik+logPrior #+logProp # no proposal since using random walk metropolis (symmetry)
@@ -417,7 +375,6 @@ update_theta_polar <- function(params){ ## draw theta (index weights)
     ## log of Metropolis acceptance ratio
     logLik <- -0.5*((logdetSIG_prop-logdetSIG)+
                       as.numeric(eigenQuadProd(invSIG_prop,y_Bbeta_Zalpha_prop)-eigenQuadProd(invSIG,y_Bbeta_Zalpha))  )      ## proposed - current
-    #as.numeric(t(y_Bbeta_Zalpha_prop)%*%(invSIG_prop)%*%y_Bbeta_Zalpha_prop-t(y_Bbeta_Zalpha)%*%(invSIG)%*%y_Bbeta_Zalpha)  )      ## proposed - current
     logPrior <- 0  ## proposed - current ## uniform prior on half sphere
     logProp <- sum(stats::dbeta(phibeta,prop_phi_a,b_mode,log=TRUE)) -
       sum(stats::dbeta(phibeta_prop,prop_phi_a,b_mode,log=TRUE)) +
