@@ -1,10 +1,9 @@
 Package: CKMR
-Title: What the Package Does (One Line, Title Case)
+Title: Collapsible Kernel Machine Regression
 Version: 0.0.0.9000
 Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"),
-           comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: What the package does (one paragraph).
+    person("Glen", "McGee", , "gmcgee@uwaterloo.ca")
+Description: An R package to implement fit the collapsible kernel machine regression (CKMR) and multiple index models (CMIM) in McGee et al (2025+) available at https://doi.org/10.48550/arXiv.2409.18005.
 License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
