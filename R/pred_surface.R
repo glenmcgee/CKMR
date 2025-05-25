@@ -393,6 +393,7 @@ summarize_pred_PSR <- function(pred,nchains){
 #' @param fit Fitted model
 #' @param gridlen Length of exposure grid
 #' @param includeInt  Include intercept in prediction
+#' @param whichids Which ids to plot (overrides restrict option)
 #' @param restrict restrict to non-null associations (only for interactions)
 #'
 #' @return Returns list of predictions
@@ -402,7 +403,9 @@ pred_surface_indexwise_interac <- function(fit,
                                    # Xnew=NULL,
                                    gridlen=21,
                                    includeInt=TRUE,## include intercept in prediction
-                                   restrict=TRUE){  ## restrict to non-nulls (only for interactions)
+                                   whichids=NULL,
+                                   restrict=TRUE ){## restrict to non-nulls (only for interactions)
+
 
   ##
   n <- fit$n
@@ -424,7 +427,9 @@ pred_surface_indexwise_interac <- function(fit,
   tau2_nonadditive <- fit$tau2_nonadditive
   sigma2 <- fit$sigma2
   Psi <- fit$Psi
-  if(restrict==TRUE){
+  if(!is.null(whichids)){
+    whichindex <- whichids
+  }else if(restrict==TRUE){
     whichindex <- which(apply(fit$gamma_nonadditive,2,mean)>0.5)
   }else{
     whichindex <- 1:p
