@@ -15,7 +15,7 @@ update_alpha <- function(params){
   invSIG <- params$params$invSIG
 
 
-  V <- FastGP::rcppeigen_invert_matrix(diag(1,pz)+t(Z)%*%invSIG%*%Z)#solve(diag(1,pz)+t(Z)%*%invSIG%*%Z)
+  V <- FastGP::rcppeigen_invert_matrix(as.matrix(diag(1,pz)+t(Z)%*%invSIG%*%Z))#solve(diag(1,pz)+t(Z)%*%invSIG%*%Z)
   mu <- V%*%t(Z)%*%invSIG%*%(y-Bbeta)
 
 

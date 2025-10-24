@@ -79,7 +79,7 @@ update_gamma_index <- function(params){ ##
     # proposed beta
     if(gamma_additive_prop[j]>gamma_additive[j]){
       ## Note: final term is unpenalized aka improper prior, so we draw the final term from N(0,1) separately
-      beta_additive_prop[beta_id[-d[j]]] <- c(mvtnorm::rmvnorm(1,rep(0,d[j]-1),as.matrix(tau2_additive[j]*FastGP::rcppeigen_invert_matrix(Sstar[beta_id[-d[j]],beta_id[-d[j]]]))))
+      beta_additive_prop[beta_id[-d[j]]] <- c(mvtnorm::rmvnorm(1,rep(0,d[j]-1),as.matrix(tau2_additive[j]*FastGP::rcppeigen_invert_matrix(as.matrix(Sstar[beta_id[-d[j]],beta_id[-d[j]]])))))
       beta_additive_prop[beta_id[length(beta_id)]] <- stats::rnorm(1,0,1) ## draw the final term from N(0,1) separately
       logPrior <- logPrior+  ## proposed - current
         log(pi_additive)-log(1-pi_additive) ## for gamma_additive

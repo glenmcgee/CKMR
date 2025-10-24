@@ -31,6 +31,7 @@ List rp(int n, int k, int alpha, arma::mat C , int m){
 
 
 // [[Rcpp::depends(RcppArmadillo, RcppEigen)]]
+#include <RcppEigen.h>
 // [[Rcpp::export]]
 SEXP eigenMapMatMult(const Eigen::Map<Eigen::MatrixXd> A, Eigen::Map<Eigen::MatrixXd> B){
   Eigen::MatrixXd C = A * B;

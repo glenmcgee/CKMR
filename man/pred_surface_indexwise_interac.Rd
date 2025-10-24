@@ -8,6 +8,7 @@ pred_surface_indexwise_interac(
   fit,
   gridlen = 21,
   includeInt = TRUE,
+  whichids = NULL,
   restrict = TRUE
 )
 }
@@ -17,6 +18,8 @@ pred_surface_indexwise_interac(
 \item{gridlen}{Length of exposure grid}
 
 \item{includeInt}{Include intercept in prediction}
+
+\item{whichids}{Which ids to plot (overrides restrict option)}
 
 \item{restrict}{restrict to non-null associations (only for interactions)}
 }
